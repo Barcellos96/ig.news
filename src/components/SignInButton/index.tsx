@@ -10,7 +10,6 @@ import { userInfo } from 'os'
 export function SingInButton() {
     const [session] = useSession()
 
-    console.log(session)
 
     return session ? (
         <button 
