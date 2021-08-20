@@ -6,6 +6,7 @@ import { stripe } from '../../../services/stripe';
 export async function saveSubscription(
     subscriptionId: string,
     customerId: string,
+    createAction = false,
 ) {    // Buscar usuário no banco do fauna com o ID {customerID} =stripe_customer_id ---- para isso devo criar um indice (index) no fauna
     // salvar os dados da subscription no faunaDB
     const userRef = await fauna.query(
@@ -29,10 +30,27 @@ export async function saveSubscription(
         price_id: subscription.items.data[0].price.id
     }
 
-    await fauna.query(
-        q.Create(
-            q.Collection('subscriptions'),
-            { data: subscription}
+    if (createAction) {
+        await fauna.query(
+            q.Create(
+                q.Collection('subscriptions'),
+                { data: subscription}
+            )
         )
-    )
+    } else {
+        await fauna.query(
+            q.Replace( //updated atualiza apenas 1 dado, replace substitui a subscription por completo
+                q.Select(
+                    "ref",
+                    q.Get(
+                        q.Match(
+                            q.Index('subscription_by_id'),
+                            subscriptionId,
+                        )
+                    )
+                ),
+                {data: subscriptionData}
+            )
+        )
+    }
 }
